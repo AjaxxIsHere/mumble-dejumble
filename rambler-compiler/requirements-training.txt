@@ -1,0 +1,8 @@
+# Colab training environment — versions verified working together on Colab (CUDA 12.8), Aug 2026.
+# torch deliberately NOT pinned: use Colab's preinstalled CUDA build.
+transformers==5.16.1
+peft==0.20.0
+trl==1.12.0
+accelerate==1.14.0
+datasets==5.0.1
+bitsandbytes>=0.45

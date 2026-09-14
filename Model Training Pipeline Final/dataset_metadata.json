@@ -1,0 +1,126 @@
+{
+  "dataset": "rambler voice-dictation cleanup (v4.0.0)",
+  "generated_by": "automated quality check",
+  "date_checked": "2026-09-12",
+  "generator_version": "v4.0.0 (uniform across all rows)",
+  "files": {
+    "train.jsonl": { "rows": 12750, "bytes": 10072356, "sha256": "0cbad5bbcd696a64597372a58d8692723bbc6bc7b65bbe7502823a28e0b10c15" },
+    "validation.jsonl": { "rows": 1500, "bytes": 1181416, "sha256": "d8d4524685578b5942ab7df2bd2c68f8551966f971621077becba9ed018d83c6" },
+    "test.jsonl": { "rows": 750, "bytes": 591717, "sha256": "130458371e4d99527e916780ab447a22762b1fd8ae23d208abbc2420f43ab1aa" }
+  },
+  "split_ratio": "85 / 10 / 5 (train / validation / test)",
+  "total_rows": 15000,
+  "schema": {
+    "keys_per_row": 20,
+    "consistent_across_all_rows": true,
+    "fields": [
+      "id", "input", "output", "category", "transformations", "num_transformations",
+      "difficulty", "domain", "entities", "corrections", "reformulations", "formatting",
+      "preservation_case", "preserved", "combo", "template_id", "seed", "generator_version",
+      "bucket", "source"
+    ]
+  },
+  "quality_checks": {
+    "duplicate_ids": { "train": 0, "validation": 0, "test": 0, "status": "pass" },
+    "duplicate_input_output_pairs": { "train": 0, "validation": 0, "test": 0, "status": "pass" },
+    "empty_input_or_output": { "status": "pass", "count": 0 },
+    "cross_split_leakage": {
+      "shared_pairs": { "train~validation": 0, "train~test": 0, "validation~test": 0, "status": "pass" },
+      "shared_inputs": {
+        "train~validation": 1,
+        "train~test": 0,
+        "validation~test": 0,
+        "detail": "1 formatting instruction ('make it polite: Confirm the 2:15 PM slot.') appears in both train and validation with DIFFERENT targets (two valid politeness paraphrases). Low risk: no identical pair leaks; slight optimism possible on this val row.",
+        "status": "minor_note"
+      }
+    },
+    "duplicate_inputs_within_train": {
+      "count": 3,
+      "detail": "3 formatting instructions each appear twice in train with different but equally valid outputs (e.g. 'I'd appreciate it if you could confirm...' vs 'Could I ask you to confirm...'). Intentional one-to-many supervision; adds slight target entropy for formatting tasks only.",
+      "status": "minor_note"
+    },
+    "label_consistency": {
+      "num_transformations_matches_list_length": true,
+      "bucket_to_transformations_mapping": {
+        "simple": ["filler", "repetition"],
+        "correction": ["self_correction", "reformulation"],
+        "repetition": ["repetition"],
+        "reformulation": ["reformulation"],
+        "formatting": ["formatting"],
+        "noop": [],
+        "compositional": ">= 2 transformations"
+      },
+      "violations": 0,
+      "combo_set_on_non_compositional_rows": 0,
+      "status": "pass"
+    },
+    "entity_annotations_vs_output_text": {
+      "method": "word-overlap of annotated entities against output text",
+      "rows_with_entities": { "train": 8071, "validation": 947, "test": 485 },
+      "rows_with_all_entities_present": { "train": "98.2%", "validation": "98.5%", "test": "98.8%" },
+      "entities_missing_from_output": { "train": "1.04%", "validation": "0.81%", "test": "0.68%" },
+      "root_causes": [
+        "Possessive morphology: 'Dennis' annotated but output has 'Dennis's' (regex artifact, not a data error)",
+        "Wording drift in a few generator rows: 'this week' -> 'this weekend' (annotation not updated)",
+        "A few legit correction/removal cases where the output legitimately drops the annotated span"
+      ],
+      "impact": "Will depress word-overlap EPS scores by roughly 1% at most; does not indicate broken data",
+      "status": "pass_with_notes"
+    },
+    "length_statistics": {
+      "unit": "characters; token estimates at ~3.8 chars/token",
+      "input_chars": {
+        "train": { "p50": 95, "p95": 170, "max": 260 },
+        "validation": { "p50": 93, "p95": 164, "max": 236 },
+        "test": { "p50": 94, "p95": 173, "max": 237 }
+      },
+      "output_chars": {
+        "train": { "p50": 77, "p95": 146, "max": 192 },
+        "validation": { "p50": 78, "p95": 140, "max": 185 },
+        "test": { "p50": 76, "p95": 146, "max": 176 }
+      },
+      "combined_input_plus_output_chars": {
+        "p50": 170, "p95": 312, "p99": 358, "max": 446
+      },
+      "estimated_combined_tokens": { "p99": 94, "max": 117 },
+      "note": "MAX_SEQ_LEN=256 in the notebook has comfortable headroom even after the chat-template system prompt (~60 tokens)",
+      "status": "pass"
+    },
+    "output_distribution_sanity": {
+      "noop_rows_output_equals_input": { "train": "20.0%", "validation": "20.0%", "test": "20.0%" },
+      "outputs_15pct_longer_than_input": { "train": 84, "validation": 15, "test": 5 },
+      "status": "pass (noop share is by design, formatting tasks legitimately expand text)"
+    },
+    "seed_uniqueness": { "train": "12750/12750", "validation": "1500/1500", "test": "750/750", "status": "pass" }
+  },
+  "distributions": {
+    "bucket": {
+      "compositional": "30.0%", "correction": "25.0%", "noop": "20.0%",
+      "simple": "15.0%", "formatting": "10.0%"
+    },
+    "category": {
+      "mixed": "30.0%", "basic": "20.0%", "reformulation": "12.5%", "correction": "12.5%",
+      "formatting": "10.0%", "repetition": "7.5%", "filler": "7.5%"
+    },
+    "difficulty": { "easy": "41.8%", "medium": "34.9%", "hard": "23.3%" },
+    "source": { "real": "63.8%", "template": "36.2%" },
+    "domain": {
+      "everyday": "66.8%",
+      "others_at_~3pct_each": ["work", "university", "notes", "lists", "technical", "email", "travel", "scheduling", "programming", "messaging", "shopping", "..."]
+    },
+    "compositional_combo_breakdown": {
+      "filler+repetition": 1350,
+      "filler+self_correction": 1350,
+      "repetition+self_correction": 1089,
+      "filler+repetition+self_correction": 711
+    },
+    "note": "All distributions are proportionally matched across train/validation/test (stratified split confirmed)."
+  },
+  "overall_verdict": "PASS — dataset is clean, schema-consistent, leak-free (1 minor shared instruction), stratified, and well within sequence-length budget.",
+  "recommendations": [
+    "No retraining-blocking issues found; safe to train as-is.",
+    "Optionally deduplicate the 3 duplicate-input formatting rows in train if target-entropy on formatting tasks becomes a measurable issue.",
+    "Consider updating the handful of 'this week' -> 'this weekend' annotations if EPS is computed with strict word overlap.",
+    "Domain skew (66.8% everyday) mirrors intended usage; if the shipped app targets work/technical users, add eval coverage for those domains."
+  ]
+}

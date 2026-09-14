@@ -1,0 +1,115 @@
+{
+  "total": 15000,
+  "per_category": {
+    "mixed": 4500,
+    "correction": 1875,
+    "reformulation": 1875,
+    "formatting": 1500,
+    "basic": 3000,
+    "filler": 1125,
+    "repetition": 1125
+  },
+  "per_combo": {
+    "filler+corr": 1350,
+    "filler+rep": 1350,
+    "filler+rep+corr": 711,
+    "rep+corr": 1089,
+    "null": 10500
+  },
+  "per_difficulty": {
+    "hard": 3491,
+    "easy": 6273,
+    "medium": 5236
+  },
+  "per_domain": {
+    "everyday": 10024,
+    "scheduling": 451,
+    "email": 454,
+    "university": 463,
+    "lists": 459,
+    "work": 474,
+    "programming": 440,
+    "notes": 460,
+    "technical": 456,
+    "messaging": 437,
+    "shopping": 430,
+    "travel": 452
+  },
+  "marker_histogram": {
+    "rather": 396,
+    "no wait": 615,
+    "wait": 584,
+    "I mean": 630,
+    "oh hold on": 158,
+    "actually": 654,
+    "sorry": 575,
+    "change that to": 339,
+    "make that": 360,
+    "I meant": 386,
+    "not": 328
+  },
+  "correction_kinds": {
+    "number": 1933,
+    "name": 353,
+    "item": 933,
+    "date": 613,
+    "time": 360,
+    "location": 426,
+    "tech": 407
+  },
+  "formatting_types": {
+    "bullet_list": 695,
+    "polite_message": 484,
+    "heading": 321
+  },
+  "input_word_percentiles": {
+    "p25": 13,
+    "p50": 18,
+    "p75": 24,
+    "p90": 29,
+    "p99": 38,
+    "max": 48
+  },
+  "output_word_percentiles": {
+    "p25": 9,
+    "p50": 15,
+    "p75": 21,
+    "p90": 26,
+    "p99": 31,
+    "max": 35
+  },
+  "avg_num_transformations": 1.1474,
+  "preservation_count": 0,
+  "identity_count": 3000,
+  "avg_fillers_by_difficulty": {
+    "hard": 2.7400909681611436,
+    "easy": 1.0867469879518072,
+    "medium": 1.4925799086757991
+  },
+  "dataset_version": "20260904.1",
+  "generator_version": "v4.0.0",
+  "split_sizes": {
+    "train": 12750,
+    "validation": 1500,
+    "test": 750
+  },
+  "per_bucket": {
+    "compositional": 4500,
+    "correction": 3750,
+    "formatting": 1500,
+    "noop": 3000,
+    "simple": 2250
+  },
+  "per_source": {
+    "real": 9573,
+    "template": 5427
+  },
+  "bucket_targets": {
+    "noop": 0.2,
+    "simple": 0.15,
+    "correction": 0.25,
+    "compositional": 0.3,
+    "formatting": 0.1
+  },
+  "gaps": 0
+}
