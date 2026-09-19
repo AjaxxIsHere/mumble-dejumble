@@ -1,5 +1,7 @@
 package com.example.mumble_jumble
 
+import android.content.Intent
+import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -8,6 +10,7 @@ import java.io.FileOutputStream
 
 class MainActivity : FlutterActivity() {
     private val channelName = "mumble_jumble/assets"
+    private val overlayTriggerChannelName = "mumble_jumble/overlay_trigger"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -25,6 +28,24 @@ class MainActivity : FlutterActivity() {
                             result.success(ensureAssetCopied(assetPath, fileName))
                         } catch (e: Exception) {
                             result.error("COPY_FAILED", e.message, null)
+                        }
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+
+        // Overlay / accessibility helpers used by lib/overlay.dart.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, overlayTriggerChannelName)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "openAccessibilitySettings" -> {
+                        try {
+                            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("SETTINGS_FAILED", e.message, null)
                         }
                     }
                     else -> result.notImplemented()

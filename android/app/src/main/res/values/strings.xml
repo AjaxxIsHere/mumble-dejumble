@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="volume_key_service_description">
+        Lets Mumble Jumble detect a double press of the volume-down key to show
+        a floating microphone bubble anywhere on your phone. A single press of
+        volume-down while the bubble is visible hides it. No screen content is
+        read and no key presses are recorded.
+    </string>
+</resources>
