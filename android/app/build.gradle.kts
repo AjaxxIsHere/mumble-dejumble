@@ -27,6 +27,11 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Keep the 1.2 GB GGUF from being compressed in the APK:
+        // AssetManager must stream it as a plain file.
+        androidResources {
+            noCompress += "gguf"
+        }
     }
 
     buildTypes {

@@ -159,12 +159,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               const Spacer(),
-              const Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.fiber_manual_record, size: 12, color: Color(0xFFFA5D19)),
-                  SizedBox(width: 6),
-                  Text('On-device', style: TextStyle(color: Colors.white70)),
+                  Icon(
+                    Icons.memory_rounded,
+                    size: 14,
+                    color: controller.llmEngineReady
+                        ? const Color(0xFFFA5D19)
+                        : Colors.white38,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    controller.llmEngineReady
+                        ? 'Rambler 2B engine'
+                        : 'Rule-based fallback',
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                  const SizedBox(width: 16),
+                  const Icon(Icons.fiber_manual_record, size: 12, color: Color(0xFFFA5D19)),
+                  const SizedBox(width: 6),
+                  const Text('On-device', style: TextStyle(color: Colors.white70)),
                 ],
               ),
             ],

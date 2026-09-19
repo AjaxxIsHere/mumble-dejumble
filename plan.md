@@ -263,7 +263,7 @@ If the hybrid Gated DeltaNet kernels fail in Unsloth (training) or
 | 2 — Training | Fine-tuned Qwen3.5-0.8B adapter | Beats heuristics-only baseline on per-bucket eval + EPS; identity & traps pass; GGUF export path proven |
 | 3 — Export | GGUF (Q4_K_M) validated in llama.cpp | RAM + latency measured under budget on target-class device |
 | 4 — Robustness | Fallback + edge-case pass | Cleanup failure never loses user text |
-| 5 — Flutter integration | Replace/upgrade Gemma cleanup + speech_service | (deferred, design later) |
+| 5 — Flutter integration | Replace Gemma cleanup with the fine-tuned GGUF | ✅ DONE — `lib/services/llama_cleanup_service.dart` (llamadart/llama.cpp v0.4.0) loads `rambler-2b-q4_k_m-no-mtp.gguf` at n_ctx=1024, greedy decoding, exact training SYSTEM_PROMPT (pinned by `test/cleanup_utils_test.dart`), `<think>` blocks stripped, 15 s timeout → rule-based fallback; Gemma removed |
 
 ---
 

@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:whisper_flutter_new/whisper_flutter_new.dart';
 
 import '../models/app_state.dart';
-import '../services/gemma_cleanup_service.dart';
+import '../services/llama_cleanup_service.dart';
 import '../services/local_text_processor.dart';
 import '../services/model_manager.dart';
 import '../services/permission_service.dart';
@@ -16,7 +16,7 @@ import '../services/speech_service.dart';
 class VoiceController extends ChangeNotifier {
   final PermissionService _permissionService = PermissionService();
   final ModelManager _modelManager = ModelManager();
-  final GemmaCleanupService _gemmaService = GemmaCleanupService();
+  final LlamaCleanupService _cleanupService = LlamaCleanupService();
   final LocalTextProcessor _textProcessor = LocalTextProcessor();
   final SpeechService _speechService = SpeechService();
 
@@ -40,6 +40,10 @@ class VoiceController extends ChangeNotifier {
   bool get sttReady => _modelManager.sttInitialized;
   bool get llmReady => _modelManager.llmInitialized;
 
+  /// True when the fine-tuned GGUF engine loaded; false means cleanup
+  /// currently runs through the rule-based fallback.
+  bool get llmEngineReady => _cleanupService.initialized;
+
   Future<void> initialize() async {
     _state = VoiceAppState.initializingStt;
     notifyListeners();
@@ -55,7 +59,7 @@ class VoiceController extends ChangeNotifier {
 
       await _modelManager.initializeStt();
       await _prepareLocalTinyModel();
-      await _gemmaService.initialize();
+      await _cleanupService.initialize();
       await _modelManager.initializeLlm();
       _state = VoiceAppState.ready;
       _errorMessage = '';
@@ -135,7 +139,7 @@ class VoiceController extends ChangeNotifier {
     try {
       final audioPath = await _speechService.stopRecording();
       _rawTranscript = await _transcribeAudio(audioPath);
-      final cleaned = await _gemmaService.processText(_rawTranscript);
+      final cleaned = await _cleanupService.processText(_rawTranscript);
       _polishedText = cleaned.isNotEmpty ? cleaned : _textProcessor.cleanRawText(_rawTranscript);
       _state = VoiceAppState.completed;
       _isRecording = false;
@@ -191,7 +195,7 @@ class VoiceController extends ChangeNotifier {
   @override
   void dispose() {
     _speechService.dispose();
-    _gemmaService.dispose();
+    _cleanupService.dispose();
     super.dispose();
   }
 }

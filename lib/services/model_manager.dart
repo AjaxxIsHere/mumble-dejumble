@@ -51,7 +51,7 @@ class ModelManager {
       _llmError = null;
       _llmProgress = 1.0;
     } catch (error) {
-      _llmError = 'Gemma model failed to initialize.';
+      _llmError = 'Rambler GGUF failed to initialize.';
       debugPrint('ModelManager initializeLlm error: $error');
     } finally {
       _isBusy = false;

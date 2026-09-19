@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>Mumble Jumble 🎙️</h1>
+  <h1>Mumble (de)Jumble 🎙️</h1>
 
   <p><b>An on-device, privacy-first speech dictation engine that transforms rambling voice notes into polished text.</b></p>
 
@@ -49,7 +49,7 @@ Mic Audio (16 kHz Mono WAV)
 | --- | --- | --- |
 | **Audio Capture** | `record` package | 16 kHz mono WAV with hardware AEC and noise suppression |
 | **Acoustic ASR** | `whisper_flutter_new` (`whisper.cpp`) | Bundled `ggml-tiny.en.bin` asset for real-time speech tokenization |
-| **Text Cleanup** | Fine-tuned Qwen3.5-2B (`llama.cpp`) | Quantized 4-bit GGUF executing conversational and syntactic repair |
+| **Text Cleanup** | Fine-tuned Qwen3.5-2B via `llamadart` | Q4_K_M GGUF at `n_ctx=1024`, greedy decoding, exact training-time prompt |
 | **Safe Fallback** | `LocalTextProcessor` | Heuristic engine ensuring zero dropped words during LLM initialization |
 
 ---
@@ -71,7 +71,7 @@ Trained with QLoRA across an audited synthetic disfluency dataset, our fine-tune
 ## 🛠️ The Tech Stack
 
 * **Application Core:** Flutter & Dart (cross-platform client and reactive state management)
-* **On-Device Inference:** `llama.cpp` C++ engine bridged to Flutter runtime
+* **On-Device Inference:** [`llamadart`](https://pub.dev/packages/llamadart) — pure Dart bindings over `llama.cpp` v0.4.0 (no local C++ toolchain required)
 * **Acoustic Transcription:** `whisper.cpp` (embedded quantized Whisper architecture)
 * **Model Training & Adaptation:** Hugging Face `peft`, `trl`, BitsAndBytes (4-bit QLoRA, r=16)
 
@@ -120,9 +120,10 @@ flutter pub get
 
 **3. Model weights provisioning:**
 
-* The base Whisper ASR model (`ggml-tiny.en.bin`) is pre-bundled in `assets/models/`.
-* Place your converted cleanup model (`rambler-2b-q4_k_m-no-mtp.gguf`) into `assets/models/`.
-* *Note: if the GGUF weight file is omitted, the app will initialize the rule-based `LocalTextProcessor` heuristic fallback.*
+* The Whisper ASR model (`ggml-tiny.en.bin`) and the fine-tuned cleanup model (`rambler-2b-q4_k_m-no-mtp.gguf`, ~1.2 GB) are both bundled in `assets/models/`.
+* On first Android launch, the GGUF is streamed out of the APK into app storage (chunked copy — it is never buffered whole in memory).
+* Desktop builds look for the GGUF in the platform support directory if the asset is unavailable.
+* *If the cleanup model can't be loaded, the app automatically falls back to the rule-based `LocalTextProcessor` — cleanup never fails silently, and user text is never lost.*
 
 **4. Build and run:**
 

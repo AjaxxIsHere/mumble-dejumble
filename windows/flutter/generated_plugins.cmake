@@ -3,7 +3,6 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  flutter_gemma
   permission_handler_windows
   record_windows
 )
