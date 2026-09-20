@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../models/dictation_state.dart';
 
@@ -13,6 +14,7 @@ class TranscriptView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
+    TextEditingController _controller = TextEditingController();
 
     return Container(
       width: double.infinity,
@@ -36,10 +38,7 @@ class TranscriptView extends StatelessWidget {
     }
 
     if (state.status == DictationStatus.transcribing) {
-      return _ProgressRow(
-        cs: cs,
-        label: 'Running whisper.cpp…',
-      );
+      return _ProgressRow(cs: cs, label: 'Running whisper.cpp…');
     }
 
     if (state.rawTranscript.isNotEmpty) {
@@ -63,6 +62,18 @@ class TranscriptView extends StatelessWidget {
             Text(
               state.cleanedTranscript,
               style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              child: IconButton(
+                icon: const Icon(Icons.copy),
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: state.cleanedTranscript));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Copied to clipboard')),
+                  );
+                },
+              ),
             ),
           ],
         ],

@@ -121,7 +121,7 @@ abstract final class AppConstants {
   ];
 
   /// Generation parameters for the cleanup pass.
-  static const int cleanupMaxTokens = 128;
+  static const int cleanupMaxTokens = 512;
   static const double cleanupTemperature = 0.0;
   static const int cleanupTopK = 1;
   static const double cleanupTopP = 1.0;
