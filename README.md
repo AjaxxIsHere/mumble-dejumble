@@ -74,7 +74,7 @@ The chart compares the base Qwen3.5-2B model with both fine-tuned Rambler checkp
 
 ## 📱 App Preview
 
-![Mumble Jumble Android app showing transcript cleanup](assets/images/screenshot1.jpeg)
+<img src="assets/images/screenshot1.jpeg" alt="Mumble Jumble Android app showing transcript cleanup" width="320">
 
 The Android client displays the raw speech transcript alongside the cleaned result. Processing is designed to stay on-device, with the floating microphone bubble available after overlay permission is enabled.
 
@@ -132,6 +132,7 @@ flutter pub get
 
 **3. Model weights provisioning:**
 
+* [Download the model weights from Google Drive](https://drive.google.com/drive/folders/1pKWz-SyVWkYlUtXFG16gcjHpUJFrtWWp?usp=sharing) if they are not already present in `assets/models/`.
 * The Whisper ASR model (`ggml-tiny.en.bin`) and the fine-tuned cleanup model (`rambler-2b-q4_k_m-no-mtp.gguf`, ~1.2 GB) are both bundled in `assets/models/`.
 * On first Android launch, the GGUF is streamed out of the APK into app storage (chunked copy — it is never buffered whole in memory).
 * Desktop builds look for the GGUF in the platform support directory if the asset is unavailable.
