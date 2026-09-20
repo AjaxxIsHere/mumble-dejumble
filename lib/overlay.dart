@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,8 +7,9 @@ import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
 /// Channel the native [VolumeKeyAccessibilityService] uses to tell the main
 /// isolate that the user double-pressed / single-pressed VOLUME_DOWN.
-const MethodChannel _volumeTriggerChannel =
-    MethodChannel('mumble_jumble/overlay_trigger');
+const MethodChannel _volumeTriggerChannel = MethodChannel(
+  'mumble_jumble/overlay_trigger',
+);
 
 /// The cached overlay engine tag used by flutter_overlay_window internally.
 /// We mirror it here so the accessibility service and Dart agree on it.
@@ -39,9 +41,8 @@ class _OverlayApp extends StatelessWidget {
 
 /// The floating microphone bubble itself.
 ///
-/// Renders a compact circular mic button that floats at the top of the screen.
-/// Tapping it (for now) just pulses - real voice capture will be wired in the
-/// next milestone.
+/// Renders a yellow (#F7C000) pill capsule with a contrasting dark mic icon
+/// and an undulating 4-bar waveform animation.
 class MicBubble extends StatefulWidget {
   const MicBubble({super.key});
 
@@ -49,43 +50,151 @@ class MicBubble extends StatefulWidget {
   State<MicBubble> createState() => _MicBubbleState();
 }
 
-class _MicBubbleState extends State<MicBubble> with SingleTickerProviderStateMixin {
+class _MicBubbleState extends State<MicBubble>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _waveController;
+  late final AnimationController _entryController;
+  late final StreamSubscription<dynamic> _messageSubscription;
   bool _pressed = false;
+  bool _isListening = true;
+  bool _isDismissing = false;
+
+  static const Color _pillColor = Color(0xFFF7C000);
+  static const Color _accentColor = Color(0xFF18181B);
+  static const Duration _slideDuration = Duration(milliseconds: 260);
+
+  @override
+  void initState() {
+    super.initState();
+    _waveController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+    _entryController = AnimationController(
+      vsync: this,
+      duration: _slideDuration,
+    )..forward();
+    _messageSubscription = FlutterOverlayWindow.overlayListener.listen((data) {
+      if (data == 'hide_overlay') {
+        _dismiss();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _messageSubscription.cancel();
+    _entryController.dispose();
+    _waveController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _dismiss() async {
+    if (_isDismissing) return;
+    _isDismissing = true;
+    _waveController.stop();
+    await _entryController.reverse();
+    await FlutterOverlayWindow.closeOverlay();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Material(
       type: MaterialType.transparency,
-      child: Center(
-        child: GestureDetector(
-          onTapDown: (_) => setState(() => _pressed = true),
-          onTapUp: (_) => setState(() => _pressed = false),
-          onTapCancel: () => setState(() => _pressed = false),
-          onTap: () async {
-            // TODO: start/stop voice capture in a later milestone.
-            await FlutterOverlayWindow.shareData('bubble_tap');
-          },
-          child: AnimatedScale(
-            scale: _pressed ? 0.9 : 1.0,
-            duration: const Duration(milliseconds: 120),
-            child: Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.deepPurple.withValues(alpha: 0.95),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.35),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: SlideTransition(
+          position:
+              Tween<Offset>(
+                begin: const Offset(1.15, 0),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(
+                  parent: _entryController,
+                  curve: Curves.easeOutCubic,
+                ),
               ),
-              child: const Icon(
-                Icons.mic_rounded,
-                color: Colors.white,
-                size: 36,
+          child: GestureDetector(
+            onTapDown: (_) => setState(() => _pressed = true),
+            onTapUp: (_) => setState(() => _pressed = false),
+            onTapCancel: () => setState(() => _pressed = false),
+            onTap: () async {
+              setState(() {
+                _isListening = !_isListening;
+                if (_isListening) {
+                  _waveController.repeat();
+                } else {
+                  _waveController.stop();
+                }
+              });
+              await FlutterOverlayWindow.shareData('bubble_tap');
+            },
+            child: AnimatedScale(
+              scale: _pressed ? 0.94 : 1.0,
+              duration: const Duration(milliseconds: 120),
+              curve: Curves.easeOut,
+              child: Container(
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: _pillColor,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _pillColor.withValues(alpha: 0.45),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.mic_rounded,
+                      color: _accentColor,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    AnimatedBuilder(
+                      animation: _waveController,
+                      builder: (context, child) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(4, (index) {
+                            final phase = index * (math.pi / 2.5);
+                            final wave = _isListening
+                                ? (math.sin(
+                                            _waveController.value *
+                                                    2 *
+                                                    math.pi +
+                                                phase,
+                                          ) +
+                                          1) /
+                                      2
+                                : 0.15;
+                            final barHeight = 6.0 + (wave * 18.0);
+
+                            return Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 2),
+                              width: 3.5,
+                              height: barHeight,
+                              decoration: BoxDecoration(
+                                color: _accentColor,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            );
+                          }),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -112,7 +221,8 @@ class OverlayController {
   StreamSubscription<dynamic>? _overlayListenerSub;
 
   /// Whether the overlay permission (SYSTEM_ALERT_WINDOW) is granted.
-  Future<bool> isPermissionGranted() => FlutterOverlayWindow.isPermissionGranted();
+  Future<bool> isPermissionGranted() =>
+      FlutterOverlayWindow.isPermissionGranted();
 
   /// Opens the system "Display over other apps" settings page for this app.
   /// Returns true once the user returns with the permission granted.
@@ -121,19 +231,20 @@ class OverlayController {
     return granted ?? false;
   }
 
-  /// Shows the mic bubble overlay at the top of the screen.
+  /// Shows the mic bubble beside the phone's right-side volume controls.
   Future<void> show() async {
     if (await FlutterOverlayWindow.isActive()) return;
 
     await FlutterOverlayWindow.showOverlay(
-      height: 160,
-      width: WindowSize.matchParent,
-      alignment: OverlayAlignment.topCenter,
+      height: 96,
+      width: 220,
+      alignment: OverlayAlignment.centerRight,
       flag: OverlayFlag.defaultFlag,
       enableDrag: true,
       positionGravity: PositionGravity.none,
       overlayTitle: 'Mumble Jumble listening',
-      overlayContent: 'Tap the mic to start dictating. '
+      overlayContent:
+          'Tap the mic to start dictating. '
           'Volume-down once to dismiss.',
       visibility: NotificationVisibility.visibilityPublic,
     );
@@ -142,7 +253,11 @@ class OverlayController {
   /// Hides the mic bubble overlay if it is active.
   Future<void> hide() async {
     if (!await FlutterOverlayWindow.isActive()) return;
-    await FlutterOverlayWindow.closeOverlay();
+    await FlutterOverlayWindow.shareData('hide_overlay');
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    if (await FlutterOverlayWindow.isActive()) {
+      await FlutterOverlayWindow.closeOverlay();
+    }
   }
 
   /// Listens for messages broadcast from the overlay isolate

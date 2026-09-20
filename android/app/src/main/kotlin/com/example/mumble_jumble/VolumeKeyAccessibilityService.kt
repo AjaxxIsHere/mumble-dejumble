@@ -49,6 +49,9 @@ class VolumeKeyAccessibilityService : AccessibilityService() {
         /// press of a double press before hiding the bubble.
         private const val SINGLE_PRESS_DELAY_MS = DOUBLE_PRESS_WINDOW_MS + 50L
 
+        /// Must outlast the overlay bubble's slide-out animation.
+        private const val OVERLAY_EXIT_DELAY_MS = 300L
+
         @Volatile
         var instance: VolumeKeyAccessibilityService? = null
     }
@@ -162,7 +165,13 @@ class VolumeKeyAccessibilityService : AccessibilityService() {
         try {
             val intent = Intent(this, OverlayService::class.java)
             intent.putExtra(OverlayService.INTENT_EXTRA_IS_CLOSE_WINDOW, true)
-            startService(intent)
+            handler.postDelayed({
+                try {
+                    startService(intent)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to stop OverlayService after animation: $e")
+                }
+            }, OVERLAY_EXIT_DELAY_MS)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to stop OverlayService from accessibility service: $e")
         }
