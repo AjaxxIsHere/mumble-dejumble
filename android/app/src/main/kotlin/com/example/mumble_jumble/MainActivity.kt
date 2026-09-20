@@ -66,7 +66,9 @@ class MainActivity : FlutterActivity() {
 
         val tmp = File(filesDir, "$fileName.part")
         tmp.delete()
-        assets.open(assetPath).use { input ->
+        // Flutter application assets are packaged below this AssetManager
+        // directory, while Dart addresses them relative to flutter_assets.
+        assets.open("flutter_assets/$assetPath").use { input ->
             FileOutputStream(tmp).use { output ->
                 val buffer = ByteArray(1 shl 20) // 1 MiB chunks
                 while (true) {

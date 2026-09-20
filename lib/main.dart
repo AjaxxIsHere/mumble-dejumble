@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:whisper_flutter_new/whisper_flutter_new.dart';
 
+import 'model.dart';
 import 'overlay.dart';
 
 /// Entry point used by flutter_overlay_window's secondary Flutter engine.
@@ -45,9 +46,7 @@ const RecordConfig _whisperRecordConfig = RecordConfig(
   echoCancel: false,
   noiseSuppress: false,
   autoGain: false,
-  androidConfig: AndroidRecordConfig(
-    audioSource: AndroidAudioSource.mic,
-  ),
+  androidConfig: AndroidRecordConfig(audioSource: AndroidAudioSource.mic),
 );
 
 class VoiceScreen extends StatefulWidget {
@@ -59,6 +58,7 @@ class VoiceScreen extends StatefulWidget {
 
 class _VoiceScreenState extends State<VoiceScreen> {
   final AudioRecorder _recorder = AudioRecorder();
+  final SpeechCleanupModel _cleanupModel = SpeechCleanupModel();
   final OverlayController _overlayController = OverlayController();
 
   /// True once the user granted "Display over other apps".
@@ -74,6 +74,7 @@ class _VoiceScreenState extends State<VoiceScreen> {
   bool _modelReady = false;
   String? _error;
   String _transcription = '';
+  String _cleanedTranscription = '';
 
   @override
   void initState() {
@@ -102,6 +103,7 @@ class _VoiceScreenState extends State<VoiceScreen> {
   @override
   void dispose() {
     _recorder.dispose();
+    _cleanupModel.dispose();
     super.dispose();
   }
 
@@ -119,9 +121,10 @@ class _VoiceScreenState extends State<VoiceScreen> {
 
       final File modelFile = File('${modelDir.path}/ggml-tiny.bin');
       if (!modelFile.existsSync() ||
-          modelFile.lengthSync() != 77704715 /* tiny.en size */) {
-        final ByteData assetBytes =
-            await rootBundle.load('assets/models/ggml-tiny.en.bin');
+          modelFile.lengthSync() != 77704715 /* tiny.en size */ ) {
+        final ByteData assetBytes = await rootBundle.load(
+          'assets/models/ggml-tiny.en.bin',
+        );
         await modelFile.writeAsBytes(
           assetBytes.buffer.asUint8List(assetBytes.offsetInBytes),
           flush: true,
@@ -129,10 +132,7 @@ class _VoiceScreenState extends State<VoiceScreen> {
       }
 
       // 2. Create the Whisper instance pointing at that directory.
-      _whisper = Whisper(
-        model: WhisperModel.tiny,
-        modelDir: modelDir.path,
-      );
+      _whisper = Whisper(model: WhisperModel.tiny, modelDir: modelDir.path);
 
       // 3. Sanity check the native library + warm up model loading.
       final String? version = await _whisper!.getVersion();
@@ -160,6 +160,7 @@ class _VoiceScreenState extends State<VoiceScreen> {
       setState(() {
         _error = null;
         _transcription = '';
+        _cleanedTranscription = '';
       });
 
       // hasPermission() requests the RECORD_AUDIO runtime permission
@@ -221,9 +222,20 @@ class _VoiceScreenState extends State<VoiceScreen> {
         });
       }
       debugPrint('Transcribed in ${sw.elapsedMilliseconds} ms');
+
+      if (_transcription != '(No speech detected)') {
+        final Stopwatch cleanupSw = Stopwatch()..start();
+        final cleaned = await _cleanupModel.clean(_transcription);
+        cleanupSw.stop();
+        if (mounted) {
+          setState(() => _cleanedTranscription = cleaned);
+        }
+        debugPrint('Cleaned in ${cleanupSw.elapsedMilliseconds} ms');
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _error = 'Transcription failed: $e');
+        debugPrint('Transcription failed: $e');
       }
     } finally {
       if (mounted) setState(() => _isTranscribing = false);
@@ -281,7 +293,9 @@ class _VoiceScreenState extends State<VoiceScreen> {
                     child: Icon(
                       _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
                       size: 44,
-                      color: _isRecording ? cs.onErrorContainer : cs.onPrimaryContainer,
+                      color: _isRecording
+                          ? cs.onErrorContainer
+                          : cs.onPrimaryContainer,
                     ),
                   ),
                 ),
@@ -290,9 +304,8 @@ class _VoiceScreenState extends State<VoiceScreen> {
               Text(
                 _statusText,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
           ),
@@ -332,8 +345,8 @@ class _VoiceScreenState extends State<VoiceScreen> {
             child: Text(
               _overlayPermissionReady
                   ? 'Overlay ready — double-press Volume Down anywhere '
-                      'to pop the mic bubble\n(Enable "Mumble Jumble volume trigger" '
-                      'in Accessibility settings for the global trigger)'
+                        'to pop the mic bubble\n(Enable "Mumble Jumble volume trigger" '
+                        'in Accessibility settings for the global trigger)'
                   : 'Overlay permission needed for the floating mic bubble',
               style: Theme.of(context).textTheme.bodySmall,
             ),
@@ -357,7 +370,7 @@ class _VoiceScreenState extends State<VoiceScreen> {
       // Fallback: generic accessibility settings.
       await platform.invokeMethod('openAccessibilitySettings');
     }
- }
+  }
 
   Widget _buildStatusChild(ColorScheme cs) {
     if (_error != null) {
@@ -377,14 +390,33 @@ class _VoiceScreenState extends State<VoiceScreen> {
             child: CircularProgressIndicator(strokeWidth: 2.5),
           ),
           const SizedBox(width: 14),
-          Text('Running whisper.cpp…', style: TextStyle(color: cs.onSurfaceVariant)),
+          Text(
+            'Running whisper.cpp…',
+            style: TextStyle(color: cs.onSurfaceVariant),
+          ),
         ],
       );
     }
     if (_transcription.isNotEmpty) {
-      return Text(
-        _transcription,
-        style: Theme.of(context).textTheme.titleMedium,
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Raw transcript', style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: 6),
+          Text(_transcription),
+          if (_cleanedTranscription.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            Text(
+              'Cleaned transcript',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _cleanedTranscription,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ],
+        ],
       );
     }
     return Text(
