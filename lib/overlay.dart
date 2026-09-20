@@ -50,8 +50,7 @@ class MicBubble extends StatefulWidget {
   State<MicBubble> createState() => _MicBubbleState();
 }
 
-class _MicBubbleState extends State<MicBubble>
-    with SingleTickerProviderStateMixin {
+class _MicBubbleState extends State<MicBubble> with TickerProviderStateMixin {
   late final AnimationController _waveController;
   late final AnimationController _entryController;
   late final StreamSubscription<dynamic> _messageSubscription;
