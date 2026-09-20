@@ -39,7 +39,8 @@ class VolumeKeyAccessibilityService : AccessibilityService() {
         /// (OverlayConstants.CACHED_TAG).
         private const val OVERLAY_ENGINE_TAG = "myCachedEngine"
 
-        /// Must match lib/overlay.dart.
+        /// Must match AppConstants.overlayTriggerChannel in
+        /// lib/config/app_constants.dart.
         private const val TRIGGER_CHANNEL = "mumble_jumble/overlay_trigger"
 
         /// Two volume-down presses inside this window count as a double press.

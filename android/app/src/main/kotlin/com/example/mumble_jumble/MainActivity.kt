@@ -34,7 +34,7 @@ class MainActivity : FlutterActivity() {
                 }
             }
 
-        // Overlay / accessibility helpers used by lib/overlay.dart.
+        // Overlay / accessibility helpers used by lib/services/overlay_controller.dart.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, overlayTriggerChannelName)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
