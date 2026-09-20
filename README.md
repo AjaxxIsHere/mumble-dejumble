@@ -66,6 +66,18 @@ Trained with QLoRA across an audited synthetic disfluency dataset, our fine-tune
 
 > **Evaluation Insight:** Parameter scaling to 2B provides a critical safety buffer, yielding an optimal **2.5% entity hard-fail rate** on high-entropy repairs while remaining constrained to a compact mobile memory ceiling.
 
+### Benchmark Visualization
+
+![Mumble Jumble model performance comparison](assets/images/output2.png)
+
+The chart compares the base Qwen3.5-2B model with both fine-tuned Rambler checkpoints on 300 held-out test examples from the training pipeline. The fine-tuned models raise exact-match accuracy from **22.3%** to approximately **92%**, while reducing both word error rate (WER) and normalized edit distance (NED). The entity hard-fail panel shows the percentage of rows where a declared name, date, time, or number was lost; Rambler 2B has the lowest rate at **2.5%**.
+
+## 📱 App Preview
+
+![Mumble Jumble Android app showing transcript cleanup](assets/images/screenshot1.jpeg)
+
+The Android client displays the raw speech transcript alongside the cleaned result. Processing is designed to stay on-device, with the floating microphone bubble available after overlay permission is enabled.
+
 ---
 
 ## 🛠️ The Tech Stack
